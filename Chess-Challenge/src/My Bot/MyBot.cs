@@ -2,16 +2,31 @@
 using System;
 using System.Collections.Generic;
 
-class SearchTree
+class TreeNode
 {
+    public const int MaxDepth = 3;
+    public const float StdValEnemyTurn = float.NegativeInfinity;
+    public const float StdValBotTurn = float.PositiveInfinity;
     public static uint TotalNodeCount { get; set; }
 
-    public const int MaxDepth = 3;
     public List<TreeNode> Children { get; set; } = new List<TreeNode>();
     public float Value { get; set; } = 0;
     public bool IsRoot { get; set; } = true;
-    public const float StdValEnemyTurn = float.NegativeInfinity;
-    public const float StdValBotTurn = float.PositiveInfinity;
+    public Move BranchMove { get; set; }
+    public TreeNode Parent { get; set; }
+
+    public TreeNode(Move move, TreeNode parent)
+    {
+        BranchMove = move;
+        Parent = parent;
+        IsRoot = false;
+        TotalNodeCount++;
+    }
+    public TreeNode()
+    {
+        IsRoot = true;
+        TotalNodeCount++;
+    }
 
     public bool IsLeaf(int depth) => depth == MaxDepth - 1;
 
@@ -30,7 +45,7 @@ class SearchTree
         foreach (Move move in possible_moves)
         {
             TreeNode node = new TreeNode(move, this);
-            
+
             board.MakeMove(move);
 
             if (IsLeaf(current_depth))
@@ -51,12 +66,12 @@ class SearchTree
             board.UndoMove(move);
 
             Children.Add(node);
-        } 
+        }
     }
 
     private void PropagateValueUpwards(float value, TreeNode start_node, bool is_bot_turn)
     {
-        SearchTree parent = start_node.Parent;
+        TreeNode parent = start_node.Parent;
         while (!parent.IsRoot)
         {
             if (is_bot_turn)
@@ -67,23 +82,8 @@ class SearchTree
             {
                 parent.Value = Math.Min(value, parent.Value);
             }
-            
+
         }
-    }
-
-}
-
-class TreeNode : SearchTree
-{
-    public Move BranchMove { get; set; }
-    public SearchTree Parent { get; set; }
-
-    public TreeNode(Move move, SearchTree parent)
-    {
-        BranchMove = move;
-        Parent = parent;
-        IsRoot = false;
-        SearchTree.TotalNodeCount++;
     }
 
 }
@@ -132,7 +132,7 @@ public class MyBot : IChessBot
 {
     public Move Think(Board board, Timer timer)
     {
-        SearchTree tree = new SearchTree();
+        TreeNode tree = new TreeNode();
         tree.GenerateTree(board);
         Move[] moves = board.GetLegalMoves();
         return moves[0];
